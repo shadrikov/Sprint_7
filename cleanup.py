@@ -1,5 +1,6 @@
 import requests
 from data import URLs
+import allure
 
 class CleanUp:
 
@@ -24,9 +25,17 @@ class CleanUp:
             courier_id = response_login.json().get("id")
     
         if courier_id is not None:
-            delete_url = URLs.delete_courier_handle(courier_id)
+            delete_url = URLs.delete_courier_handle('')
             response_delete = requests.delete(delete_url)
             if response_delete.status_code != 200:
-                print(f"Не удалось удалить курьера {courier_id}: {response_delete.status_code} {response_delete.text}")
+                allure.attach(
+                    body=response_delete.text,
+                    name=f"Не удалось удалить курьера {courier_id}: статус {response_delete.status_code}",
+                    attachment_type=allure.attachment_type.TEXT
+                )
         else:
-            print(f"Не удалось получить id курьера для удаления: {response_login.status_code} {response_login.text}")
+            allure.attach(
+                body=response_login.text,
+                name=f"Не удалось получить id курьера для удаления: статус {response_login.status_code}",
+                attachment_type=allure.attachment_type.TEXT
+            )
