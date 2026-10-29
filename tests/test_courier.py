@@ -4,15 +4,13 @@ from data import *
 import allure
 from cleanup import CleanUp
 import generators
+from api_client import ApiClient
 
 class TestCreateCourier:
 
     @allure.title('Успешное создание курьера')
     def test_create_courier_success(self, courier_data):
-        response = requests.post(
-            URLs.CREATE_COURIER, 
-            data=courier_data
-            )
+        response = ApiClient.post_request_create_courier(courier_data)
         try:
             assert response.status_code == 201
             assert response.json()['ok'] == True
@@ -21,11 +19,8 @@ class TestCreateCourier:
             CleanUp.delete_courier(courier_data)
 
     @allure.title('Невозможность создания курьера с повторяющимся логином')
-    def test_create_courier_repeating_login_error(self, register_new_courier):
-        response = requests.post(
-            URLs.CREATE_COURIER, 
-            data=register_new_courier
-            )
+    def test_create_courier_repeating_login_error(self, register_new_courier):   
+        response = ApiClient.post_request_create_courier(register_new_courier)
         assert response.status_code == 409
         assert response.json()['message'] == ResponseMessages.CREATE_COURIER_WITH_REPEATING_LOGIN
 
@@ -37,10 +32,7 @@ class TestCreateCourier:
         # Удаляем из словаря один из обязательных ключей
         del incomplete_data[key]
 
-        response = requests.post(
-            URLs.CREATE_COURIER, 
-            data=incomplete_data
-            )
+        response = ApiClient.post_request_create_courier(incomplete_data)
         assert response.status_code == 400
         assert response.json()['message'] == ResponseMessages.CREATE_COURIER_MISSING_REQUIRED_FIELDS
 
@@ -52,10 +44,7 @@ class TestLoginCourier:
             'login': register_new_courier['login'],
             'password': register_new_courier['password']
         }
-        response = requests.post(
-            URLs.LOGIN_COURIER, 
-            data=payload
-            )
+        response = ApiClient.post_request_login_courier(payload)
         assert response.status_code == 200
         assert Flags.COURIER_ID in response.json()
 
@@ -67,10 +56,7 @@ class TestLoginCourier:
             'password': register_new_courier['password']
         }
         payload[key] = generators.courier_login_generator()
-        response = requests.post(
-            URLs.LOGIN_COURIER, 
-            data=payload
-            )
+        response = ApiClient.post_request_login_courier(payload)
         assert response.status_code == 404
         assert response.json()['message'] == ResponseMessages.LOGIN_COURIER_WITH_INCORRECT_LOGPASSW      
 
@@ -82,9 +68,6 @@ class TestLoginCourier:
             'password': register_new_courier['password']
         }
         del payload[key]
-        response = requests.post(
-            URLs.LOGIN_COURIER, 
-            data=payload
-            )
+        response = ApiClient.post_request_login_courier(payload)
         assert response.status_code == 400
         assert response.json()['message'] == ResponseMessages.LOGIN_COURIER_MISSING_REQUIRED_FIELDS        

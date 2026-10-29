@@ -4,6 +4,7 @@ from data import *
 import allure
 from cleanup import CleanUp
 import generators
+from api_client import ApiClient
 
 class TestCreateOrder:
 
@@ -15,11 +16,7 @@ class TestCreateOrder:
         []
     ])
     def test_create_order_with_colors(self, color):
-        payload = generators.order_data_generator(color)
-        response = requests.post(
-            URLs.CREATE_ORDER_OR_GET_ORDERS_LIST, 
-            json=payload
-            )
+        response = ApiClient.post_request_create_order(color)
         assert response.status_code == 201
         assert Flags.ORDER_TRACK in response.json()
 
@@ -27,9 +24,7 @@ class TestGetOrdersList:
 
     @allure.title('Получение списка заказов')
     def test_get_orders_list(self):
-        response = requests.get(
-            URLs.CREATE_ORDER_OR_GET_ORDERS_LIST
-            )
+        response = ApiClient.get_request_get_orders()
         assert response.status_code == 200
         assert Flags.ORDERS_LIST in response.json()
         assert isinstance(response.json()[Flags.ORDERS_LIST], list)
