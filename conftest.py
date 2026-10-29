@@ -1,8 +1,9 @@
 import pytest
 import generators
 import requests
-from data import URLs
+from data import Flags
 from cleanup import CleanUp
+from api_client import ApiClient
 
 # Фикстура генерации данных нового курьера
 @pytest.fixture
@@ -14,29 +15,37 @@ def courier_data():
     }
     return courier_data
 
-# Фикстура создания нового курьера
+# Фикстура-фабрика создания нового курьера и удаления её после теста
 @pytest.fixture
-def register_new_courier(courier_data):
-    # собираем тело запроса
-    payload = {
-        "login": courier_data['login'],
-        "password": courier_data['password'],
-        "firstName": courier_data['firstName']
-    }
+def create_new_courier():
+    courier_ids = []
 
-    # отправляем запрос на регистрацию курьера и сохраняем ответ в переменную response
-    response = requests.post(
-        URLs.CREATE_COURIER, 
-        data=payload
-        )
+    def _create(payload):
+        # отправляем запрос на регистрацию курьера и сохраняем ответ в переменную response
+        response = ApiClient.post_request_create_courier(payload)
 
-    # проверяем, что регистрация прошла успешно
-    assert response.status_code == 201, f"Не удалось зарегистрировать курьера: {response.status_code} {response.text}"
+        # проверяем, что регистрация прошла успешно
+        assert response.status_code == 201, f"Не удалось зарегистрировать курьера: {response.status_code} {response.text}"
+
+        # вход в систему и получение id курьера
+        login_payload = {
+            "login": payload['login'],
+            "password": payload['password']
+        }
+
+        response_login = ApiClient.post_request_login_courier(login_payload)
+
+        # получаем id курьера и добавляем его в список
+        courier_id = response_login.json().get(Flags.COURIER_ID)
+        if courier_id:
+            courier_ids.append(courier_id)
+        
+        # возвращаем в тест ответ на запрос создания курьера
+        return response
 
     # передаём данные курьера в тест
-    yield courier_data 
+    yield _create 
 
-    # удаляем курьера после теста, предварительно совершив вход в систему и получив id курьера
-    CleanUp.delete_courier(courier_data)
-
-        
+    # удаляем курьеров после теста
+    for courier_id in courier_ids:
+        CleanUp.delete_courier(courier_id)      

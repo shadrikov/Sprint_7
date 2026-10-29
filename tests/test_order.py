@@ -2,8 +2,6 @@ import pytest
 import requests
 from data import *
 import allure
-from cleanup import CleanUp
-import generators
 from api_client import ApiClient
 
 class TestCreateOrder:
