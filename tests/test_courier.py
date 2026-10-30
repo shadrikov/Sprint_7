@@ -8,8 +8,12 @@ from api_client import ApiClient
 class TestCreateCourier:
 
     @allure.title('Успешное создание курьера')
-    def test_create_courier_success(self, courier_data, create_new_courier):
-        response = create_new_courier(courier_data)
+    def test_create_courier_success(self, courier_data, cleanup_courier):
+        response = ApiClient.post_request_create_courier(courier_data)
+
+        # Получение id курьера для последующего удаления
+        cleanup_courier(courier_data)
+        
         assert response.status_code == 201
         assert response.json()['ok'] == True
 
